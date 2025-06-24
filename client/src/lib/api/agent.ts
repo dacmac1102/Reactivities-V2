@@ -11,6 +11,7 @@ const sleep = (delay: number) => {
 
 const agent = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
+    withCredentials: true
 });
 
 agent.interceptors.request.use(config => {
@@ -32,12 +33,13 @@ agent.interceptors.response.use(
         switch (status) {
             case 400:
                 if (data.errors) {
-                    const modalStateErrors = [];
+                    const modelStateErrors = [];
                     for (const key in data.errors) {
                         if (data.errors[key]) {
-                            modalStateErrors.push(data.errors[key])
+                            modelStateErrors.push(data.errors[key]);
                         }
                     }
+                    throw modelStateErrors.flat();
                 } else {
                     toast.error(data);
                 }
