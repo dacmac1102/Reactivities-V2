@@ -3,6 +3,7 @@ import agent from "../api/agent";
 import { useLocation } from "react-router";
 import type { Activity } from "../types";
 import { useAccount } from "./useAccount";
+import { OilBarrelSharp } from "@mui/icons-material";
 
 
 export const useActivities = (id?: string) => {
@@ -15,7 +16,16 @@ export const useActivities = (id?: string) => {
             const response = await agent.get<Activity[]>('/activities');
             return response.data
         },
-        enabled: !id && location.pathname === '/activities' && !!currentUser
+        enabled: !id && location.pathname === '/activities' && !!currentUser,
+        select: data => {
+            return data.map(activity => {
+                return {
+                    ...activity,
+                    isHost: currentUser?.id === activity.hostId,
+                    isGoing: activity.attendees.some(x => x.id === currentUser?.id)
+                }
+            })
+        }
     });
     const { data: activity, isLoading: isLoadingActivity } = useQuery({
         queryKey: ['activities', id],
@@ -23,7 +33,16 @@ export const useActivities = (id?: string) => {
             const response = await agent.get<Activity>(`/activities/${id}`);
             return response.data
         },
-        enabled: !!id && !!currentUser
+        enabled: !!id && !!currentUser,
+        select: data => {
+
+            return {
+                ...data,
+                isHost: currentUser?.id === data.hostId,
+                isGoing: data.attendees.some(x => x.id === currentUser?.id)
+            }
+
+        }
     })
     const updateActivity = useMutation({
         mutationFn: async (activity: Activity) => {
@@ -56,6 +75,46 @@ export const useActivities = (id?: string) => {
             })
         }
     });
+
+    const updateAttendance = useMutation({
+        mutationFn: async (id: string) => {
+            await agent.post(`/activities/${id}/attend`)
+        },
+        onMutate: async (activityId: string) => {
+            await queryClient.cancelQueries({ queryKey: ['activities', activityId] });
+            const preActivity = queryClient.getQueryData<Activity>(['activities', activityId]);
+            queryClient.setQueryData<Activity>(['activities', activityId], oldActivity => {
+                if (!oldActivity || !currentUser) {
+                    return oldActivity
+                }
+                const isHost = oldActivity.hostId === currentUser.id;
+                const isAttending = oldActivity.attendees.some(x => x.id === currentUser.id);
+                return {
+                    ...oldActivity,
+                    isCancelled: isHost ? !oldActivity.isCancelled : oldActivity.isCancelled,
+                    attendees: isAttending
+                        ? isHost
+                            ? oldActivity.attendees
+                            : oldActivity.attendees.filter(x => x.id !== currentUser.id)
+                        : [...oldActivity.attendees, {
+                            id: currentUser.id,
+                            displayName: currentUser.displayName,
+                            imageUrl: currentUser.imageUrl
+                        }]
+                }
+            })
+
+            return { preActivity };
+
+        },
+        onError: (error, activityId, context) => {
+            console.log(error);
+            if (context?.preActivity) {
+                queryClient.setQueryData(['activities', activityId], context.preActivity)
+            }
+        }
+    })
+
     return {
         activities,
         isLoading,
@@ -63,6 +122,7 @@ export const useActivities = (id?: string) => {
         createActivity,
         deleteActivity,
         activity,
-        isLoadingActivity
+        isLoadingActivity,
+        updateAttendance
     }
 }
