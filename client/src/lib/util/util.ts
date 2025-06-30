@@ -1,4 +1,4 @@
-import { format, isValid, parseISO } from "date-fns";
+import { format, formatDistanceToNow, isValid, parseISO } from "date-fns";
 import z from "zod";
 
 export function formatDate(date: Date | string | number | null | undefined): string {
@@ -10,6 +10,14 @@ export function formatDate(date: Date | string | number | null | undefined): str
     if (!isValid(parsedDate)) return "";
 
     return format(parsedDate, "dd MMM yyyy h:mm a");
+}
+export function timeAgo(date: Date | string | number | null | undefined): string {
+    if (!date) return "";
+
+    const parsedDate = typeof date === "string" ? parseISO(date) : new Date(date);
+    if (!isValid(parsedDate)) return "";
+
+    return formatDistanceToNow(parsedDate) + " ago";
 }
 export const requiredString = (fieldName: string) => z.string({ required_error: `${fieldName} is required` }).min(1,
     { message: `${fieldName} is required` })

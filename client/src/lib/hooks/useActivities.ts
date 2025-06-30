@@ -3,7 +3,6 @@ import agent from "../api/agent";
 import { useLocation } from "react-router";
 import type { Activity } from "../types";
 import { useAccount } from "./useAccount";
-import { OilBarrelSharp } from "@mui/icons-material";
 
 
 export const useActivities = (id?: string) => {
