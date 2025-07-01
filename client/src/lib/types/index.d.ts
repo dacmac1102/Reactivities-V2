@@ -1,4 +1,8 @@
-import type { string } from "zod"
+
+type PagedList<T, TCursor> = {
+    items: T[],
+    nextCursor: TCursor
+}
 
 type Activity = {
     id: string
@@ -16,7 +20,7 @@ type Activity = {
     isHost: boolean
     hostId: string
     hostDisplayName: string
-    hostImageUrl: string
+    hostImageUrl?: string
 }
 type Profile = {
     id: string
