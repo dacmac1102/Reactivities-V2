@@ -3,6 +3,7 @@ using Application.Profiles.Commands;
 using Application.Profiles.DTOs;
 using Application.Profiles.Queries;
 using Domain;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -29,7 +30,7 @@ public class ProfilesController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new SetMainPhoto.Command { PhotoId = photoId }));
     }
-    [HttpPut()]
+    [HttpPut]
     public async Task<ActionResult> EditProfile(EditProfile.Command command)
     {
         return HandleResult(await Mediator.Send(command));
@@ -38,5 +39,19 @@ public class ProfilesController : BaseApiController
     public async Task<ActionResult<UserProfile>> GetProfile(string userId)
     {
         return HandleResult(await Mediator.Send(new GetProfile.Query { UserId = userId }));
+    }
+    [HttpPost("{userId}/follow")]
+    public async Task<ActionResult> FollowToggle(string userId)
+    {
+        return HandleResult(await Mediator.Send(new FollowToggle.Command { TargetUserId = userId }));
+    }
+    [HttpGet("{userId}/follow-list")]
+    public async Task<ActionResult> GetFollowings(string userId, string predicate)
+    {
+        return HandleResult(await Mediator.Send(new GetFollowings.Query
+        {
+            UserId = userId,
+            Predicate = predicate
+        }));
     }
 }
